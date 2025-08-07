@@ -2,6 +2,7 @@ name = "navigation-page"
 type = "javascript"
 workers_dev = true
 compatibility_date = "2025-08-07"
+main = "worker/index.js"  # 添加这行指向Worker入口
 
 [assets]
 directory = "./public"

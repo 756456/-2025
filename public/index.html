@@ -12,6 +12,11 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="h-screen overflow-hidden font-sans">
+  <!-- 添加设置按钮 -->
+  <button id="settings-btn" class="fixed top-4 left-4 opacity-50 hover:opacity-100 transition-opacity z-50">
+    <i class="fas fa-cog text-white text-xl"></i>
+  </button>
+
   <!-- 视频壁纸容器 -->
   <div id="wallpaper-container" class="fixed inset-0 z-0">
     <video id="wallpaper-video" class="video-wallpaper hidden" autoplay loop muted playsinline></video>
@@ -78,8 +83,12 @@
   </div>
 
   <!-- 设置弹窗 -->
-  <div id="settings-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center backdrop-blur-sm">
-    <div class="bg-dark text-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+  <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-1/3">
+      <h3 class="text-xl font-bold mb-4">网页配置</h3>
+      <button id="config-btn" class="bg-blue-500 text-white px-4 py-2 rounded">网页配置</button>
+    </div>
+  </div>
       <div class="p-5 border-b border-white/10 flex justify-between items-center">
         <h3 class="text-xl font-semibold setting-text">设置</h3>
         <button id="close-settings" class="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -496,6 +505,14 @@
           <span class="setting-text">保存设置</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- 配置框架 -->
+  <div id="config-panel" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-2/3 max-h-[80vh] overflow-y-auto">
+      <h3 class="text-xl font-bold mb-4">时钟设置</h3>
+      <!-- 时钟设置内容将在后续步骤添加 -->
     </div>
   </div>
 
