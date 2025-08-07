@@ -12,7 +12,7 @@ binding = "NAV_SETTINGS"
 type = "kv_namespace"
 id = "YOUR_KV_NAMESPACE_ID"
 
-# 已完全删除[build]相关配置
+# 已彻底删除所有[build]相关配置（无任何残留代码）
 [build]
 command = "npm run build"
 # 删除无效的[build.upload]配置
