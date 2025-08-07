@@ -1,9 +1,7 @@
 name = "custom-navigation-page"
-# 删除无效的type字段
-account_id = "YOUR_ACCOUNT_ID"
+account_id = "3fd5f0d412723c40fbbf9db0ea688ddb"
 workers_dev = true
-# 添加必要的兼容性日期和入口点配置
-compatibility_date = "2025-08-07"
+compatibility_date = "2025"
 main = "worker.js"
 
 # 将原内联表格式改为标准TOML表格格式
@@ -12,9 +10,3 @@ binding = "NAV_SETTINGS"
 type = "kv_namespace"
 id = "YOUR_KV_NAMESPACE_ID"
 
-# 已彻底删除所有[build]相关配置（无任何残留代码）
-[build]
-command = "npm run build"
-# 删除无效的[build.upload]配置
-[build.upload]
-directory = "."
