@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自定义导航页</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="h-screen overflow-hidden font-sans">
+  <!-- 视频壁纸容器 -->
+  <div id="wallpaper-container" class="fixed inset-0 z-0">
+    <video id="wallpaper-video" class="video-wallpaper hidden" autoplay loop muted playsinline></video>
+    <div id="wallpaper-overlay" class="fixed inset-0 bg-black/30 z-10"></div>
+  </div>
+
+  <!-- 主容器 -->
+  <div class="relative z-20 h-full flex flex-col">
+    <!-- 顶部区域 -->
+    <header class="w-full py-6 px-6">
+      <div class="max-w-7xl mx-auto">
+        <!-- 时间日期 -->
+        <div class="text-center text-white mb-6">
+          <div class="text-[clamp(2.5rem,8vw,5rem)] font-light tracking-wide" id="time-display">00:00:00</div>
+          <div class="text-[clamp(1rem,3vw,1.25rem)] opacity-90 mt-2" id="date-display"></div>
+        </div>
+        
+        <!-- 搜索栏 -->
+        <div class="w-full max-w-2xl mx-auto">
+          <input type="text" id="search-input"
+                 class="w-full py-3 px-6 rounded-full bg-white/20 backdrop-blur-md border border-white/30 
+                        text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-primary/50
+                        transition-all"
+                 placeholder="搜索...">
+        </div>
+      </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">
+      <div class="max-w-7xl mx-auto">
+        <!-- 应用图标区域 -->
+        <div id="apps-grid-container" class="flex justify-center">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6 md:gap-8" id="apps-container">
+            <!-- 图标会通过JS动态生成 -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 右键菜单 - 主页面 -->
+  <div id="main-context-menu" class="fixed w-48 rounded-lg shadow-2xl z-50 hidden">
+    <ul class="py-1 glass-effect rounded-lg">
+      <li id="add-custom-app" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-plus-circle mr-2"></i>添加自定义图标
+      </li>
+      <li id="open-settings" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-cog mr-2"></i>设置
+      </li>
+    </ul>
+  </div>
+
+  <!-- 右键菜单 - 应用图标 -->
+  <div id="app-context-menu" class="fixed w-48 rounded-lg shadow-2xl z-50 hidden">
+    <ul class="py-1 glass-effect rounded-lg">
+      <li id="edit-app" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-pencil mr-2"></i>编辑图标
+      </li>
+      <li id="delete-app" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-trash mr-2"></i>删除图标
+      </li>
+    </ul>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div id="settings-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center backdrop-blur-sm">
+    <!-- 设置弹窗内容保持不变 -->
+  </div>
+
+  <!-- 添加/编辑图标弹窗 -->
+  <div id="app-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center backdrop-blur-sm">
+    <!-- 添加/编辑图标弹窗内容保持不变 -->
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/time.js"></script>
+  <script src="/js/context-menu.js"></script>
+  <script src="/js/apps.js"></script>
+  <script src="/js/wallpaper.js"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/events.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

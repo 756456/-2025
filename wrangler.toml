@@ -1,0 +1,17 @@
+name = "custom-navigation-page"
+type = "javascript"
+
+account_id = "YOUR_ACCOUNT_ID"
+workers_dev = true
+env = {
+  NAV_SETTINGS = {
+    binding = "NAV_SETTINGS",
+    type = "kv_namespace",
+    id = "YOUR_KV_NAMESPACE_ID"
+  }
+}
+
+[build]
+command = "npm run build"
+[build.upload]
+directory = "."

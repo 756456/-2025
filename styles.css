@@ -1,0 +1,31 @@
+/* Tailwind配置会移至单独的JS文件或wrangler.toml */
+
+/* 自定义工具类 */
+@layer utilities {
+  .content-auto {
+    content-visibility: auto;
+  }
+  .app-icon {
+    @apply flex flex-col items-center justify-center cursor-pointer transition-all duration-300 
+           hover:scale-105 relative;
+  }
+  .app-icon-img {
+    @apply rounded-lg transition-all duration-300;
+  }
+  .app-icon-name {
+    @apply text-white text-xs mt-1 text-center drop-shadow-md whitespace-nowrap;
+  }
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .video-wallpaper {
+    @apply absolute top-0 left-0 w-full h-full object-cover z-0;
+  }
+}

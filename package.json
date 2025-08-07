@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "upload-assets": "wrangler kv:key put \"assets/index.html\" ./index.html && \
+                      wrangler kv:key put \"assets/styles.css\" ./styles.css && \
+                      wrangler kv:key put \"assets/js/utils.js\" ./js/utils.js && \
+                      wrangler kv:key put \"assets/js/storage.js\" ./js/storage.js && \
+                      wrangler kv:key put \"assets/js/time.js\" ./js/time.js && \
+                      wrangler kv:key put \"assets/js/context-menu.js\" ./js/context-menu.js && \
+                      wrangler kv:key put \"assets/js/apps.js\" ./js/apps.js && \
+                      wrangler kv:key put \"assets/js/wallpaper.js\" ./js/wallpaper.js && \
+                      wrangler kv:key put \"assets/js/search.js\" ./js/search.js && \
+                      wrangler kv:key put \"assets/js/settings.js\" ./js/settings.js && \
+                      wrangler kv:key put \"assets/js/events.js\" ./js/events.js && \
+                      wrangler kv:key put \"assets/js/app.js\" ./js/app.js",
+    "deploy": "npm run upload-assets && wrangler publish"
+  }
+}
