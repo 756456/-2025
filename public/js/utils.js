@@ -45,19 +45,25 @@ function updateTime() {
   const timeElement = document.getElementById('time');
   const dateElement = document.getElementById('date');
 
-  // 格式化时间
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  timeElement.textContent = `${hours}:${minutes}`;
-
-  // 格式化日期
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const day = now.getDate().toString().padStart(2, '0');
-  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-  const weekday = weekdays[now.getDay()];
-  dateElement.textContent = `${year}-${month}-${day} 星期${weekday}`;
+  if (timeElement && dateElement) {
+    // 格式化时间为 HH:MM:SS 格式
+    timeElement.textContent = now.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    // 格式化日期为 星期 月 日 格式
+    dateElement.textContent = now.toLocaleDateString('zh-CN', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
 }
+
+// 修改时间更新间隔为1秒(1000ms)并立即执行一次
+updateTime();
+setInterval(updateTime, 1000);
 
 // 生成唯一ID
 function generateId(prefix = '') {
@@ -75,3 +81,4 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTime();
   setInterval(updateTime, 1000); // 从60000改为1000（每秒更新）
 });
+// ... existing code ...

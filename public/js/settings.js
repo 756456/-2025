@@ -353,3 +353,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// 添加设置按钮点击事件监听
+document.addEventListener('DOMContentLoaded', function() {
+  const settingsButton = document.getElementById('settings-button');
+  const settingsPanel = document.getElementById('settings-panel');
+
+  if (settingsButton && settingsPanel) {
+    settingsButton.addEventListener('click', function() {
+      settingsPanel.classList.toggle('hidden');
+    });
+  }
+});
