@@ -1,0 +1,65 @@
+@layer utilities {
+  .content-auto {
+    content-visibility: auto;
+  }
+  .app-icon {
+    @apply flex flex-col items-center justify-center cursor-pointer transition-all duration-300 
+           hover:scale-105 relative;
+  }
+  .app-icon-img {
+    @apply rounded-lg transition-all duration-300;
+  }
+  .app-icon-name {
+    @apply text-white text-xs mt-1 text-center drop-shadow-md whitespace-nowrap;
+  }
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .video-wallpaper {
+    @apply absolute top-0 left-0 w-full h-full object-cover z-0;
+  }
+  .position-control {
+    @apply mb-6;
+  }
+  .position-control-row {
+    @apply flex items-center justify-between mb-2;
+  }
+  .slider-container {
+    @apply flex-1 mx-3;
+  }
+  .setting-text {
+    @apply opacity-0 transition-opacity duration-300;
+  }
+  .setting-group:hover .setting-text,
+  .setting-control:focus-within .setting-text {
+    @apply opacity-100;
+  }
+}
+/* 设置按钮样式 */
+#settings-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* 弹窗样式 */
+#settings-modal, #config-panel {
+  display: none;
+}
+
+/* 配置面板样式 */
+.config-item {
+  margin-bottom: 1rem;
+}
+
+.config-item label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
