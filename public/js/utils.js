@@ -73,5 +73,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 初始化时间并每秒更新
   updateTime();
-  setInterval(updateTime, 60000); // 每分钟更新一次
+  setInterval(updateTime, 1000); // 从60000改为1000（每秒更新）
 });

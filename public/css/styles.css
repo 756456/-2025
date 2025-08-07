@@ -42,3 +42,24 @@
     @apply opacity-100;
   }
 }
+/* 设置按钮样式 */
+#settings-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* 弹窗样式 */
+#settings-modal, #config-panel {
+  display: none;
+}
+
+/* 配置面板样式 */
+.config-item {
+  margin-bottom: 1rem;
+}
+
+.config-item label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
