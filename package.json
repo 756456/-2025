@@ -1,6 +1,7 @@
 {
   "scripts": {
     "upload-assets": "wrangler kv:key put \"assets/index.html\" ./index.html && wrangler kv:key put \"assets/styles.css\" ./styles.css && wrangler kv:key put \"assets/js/storage.js\" ./js/storage.js",
-    "deploy": "npm run upload-assets && wrangler publish"
+    "build": "echo 'Build completed'",
+    "deploy": "npm run upload-assets && wrangler deploy --no-build"
   }
 }
