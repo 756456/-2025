@@ -1,8 +1,7 @@
-name = "navigation-page"
-type = "javascript"
+name = "2025"  # 修改为CI预期的名称
 workers_dev = true
 compatibility_date = "2025-08-07"
-main = "worker/index.js"  # 添加这行指向Worker入口
+main = "worker/index.js"
 
 [assets]
 directory = "./public"
