@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自定义导航页</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#10B981',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .app-icon {
+        @apply flex flex-col items-center justify-center cursor-pointer transition-all duration-300 
+               hover:scale-105 relative;
+      }
+      .app-icon-img {
+        @apply rounded-lg transition-all duration-300;
+      }
+      .app-icon-name {
+        @apply text-white text-xs mt-1 text-center drop-shadow-md whitespace-nowrap;
+      }
+      .glass-effect {
+        @apply bg-white/10 backdrop-blur-md border border-white/20;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .video-wallpaper {
+        @apply absolute top-0 left-0 w-full h-full object-cover z-0;
+      }
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden font-sans">
+  <!-- 视频壁纸容器 -->
+  <div id="wallpaper-container" class="fixed inset-0 z-0">
+    <video id="wallpaper-video" class="video-wallpaper hidden" autoplay loop muted playsinline></video>
+    <div id="wallpaper-overlay" class="fixed inset-0 bg-black/30 z-10"></div>
+  </div>
+
+  <!-- 主容器 -->
+  <div class="relative z-20 h-full flex flex-col">
+    <!-- 顶部区域 -->
+    <header class="w-full py-6 px-6">
+      <div class="max-w-7xl mx-auto">
+        <!-- 时间日期 -->
+        <div class="text-center text-white mb-6">
+          <div class="text-[clamp(2.5rem,8vw,5rem)] font-light tracking-wide" id="time-display">00:00:00</div>
+          <div class="text-[clamp(1rem,3vw,1.25rem)] opacity-90 mt-2" id="date-display"></div>
+        </div>
+        
+        <!-- 搜索栏 -->
+        <div class="w-full max-w-2xl mx-auto">
+          <input type="text" id="search-input" 
+                 class="w-full py-3 px-6 rounded-full bg-white/20 backdrop-blur-md border border-white/30 
+                        text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-primary/50
+                        transition-all"
+                 placeholder="搜索...">
+        </div>
+      </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">
+      <div class="max-w-7xl mx-auto">
+        <!-- 应用图标区域 -->
+        <div id="apps-grid-container" class="flex justify-center">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6 md:gap-8" id="apps-container">
+            <!-- 图标会通过JS动态生成 -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 右键菜单 - 主页面 -->
+  <div id="main-context-menu" class="fixed w-48 rounded-lg shadow-2xl z-50 hidden">
+    <ul class="py-1 glass-effect rounded-lg">
+      <li id="add-custom-app" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-plus-circle mr-2"></i>添加自定义图标
+      </li>
+      <li id="open-settings" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-cog mr-2"></i>设置
+      </li>
+    </ul>
+  </div>
+
+  <!-- 右键菜单 - 应用图标 -->
+  <div id="app-context-menu" class="fixed w-48 rounded-lg shadow-2xl z-50 hidden">
+    <ul class="py-1 glass-effect rounded-lg">
+      <li id="edit-app" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-pencil mr-2"></i>编辑图标
+      </li>
+      <li id="delete-app" class="px-4 py-2 text-sm text-white hover:bg-white/20 cursor-pointer transition-colors">
+        <i class="fa fa-trash mr-2"></i>删除图标
+      </li>
+    </ul>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div id="settings-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center backdrop-blur-sm">
+    <div class="bg-dark text-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="p-5 border-b border-white/10 flex justify-between items-center">
+        <h3 class="text-xl font-semibold">设置</h3>
+        <button id="close-settings" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      <div class="p-5 overflow-y-auto flex-1">
+        <!-- 标签页导航 -->
+        <div class="flex border-b border-white/10 mb-5">
+          <button class="settings-tab active px-4 py-2 text-sm font-medium border-b-2 border-primary" data-tab="wallpaper">
+            壁纸设置
+          </button>
+          <button class="settings-tab px-4 py-2 text-sm font-medium text-white/70 hover:text-white" data-tab="icons">
+            图标设置
+          </button>
+          <button class="settings-tab px-4 py-2 text-sm font-medium text-white/70 hover:text-white" data-tab="search">
+            搜索设置
+          </button>
+        </div>
+        
+        <!-- 壁纸设置 -->
+        <div class="settings-content active" id="wallpaper-settings">
+          <div class="space-y-6">
+            <div>
+              <h4 class="text-lg font-medium mb-3">动态壁纸源</h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">本地视频文件夹</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="wallpaper-folder-path" class="flex-1 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm" placeholder="未选择文件夹" readonly>
+                    <button id="select-wallpaper-folder" class="px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-md transition-colors">
+                      选择文件夹
+                    </button>
+                  </div>
+                  <input type="file" id="folder-input" class="hidden" webkitdirectory directory multiple accept="video/*">
+                  <p class="text-xs text-white/60 mt-1">支持常见视频格式：MP4、WebM等</p>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">视频直链 (一行一个)</label>
+                  <textarea id="wallpaper-urls" class="w-full bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm h-24" placeholder="https://example.com/video1.mp4&#10;https://example.com/video2.mp4"></textarea>
+                </div>
+                
+                <div id="video-files-list" class="mt-4 p-3 bg-white/5 rounded-md max-h-40 overflow-y-auto">
+                  <p class="text-sm text-white/60 italic">已加载的视频文件将显示在这里</p>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lg font-medium mb-3">轮播设置</h4>
+              
+              <div class="space-y-4">
+                <div class="flex items-center">
+                  <input type="checkbox" id="enable-slideshow" class="rounded text-primary focus:ring-primary">
+                  <label for="enable-slideshow" class="ml-2 text-sm">启用壁纸轮播</label>
+                </div>
+                
+                <div id="slideshow-settings" class="pl-6 space-y-3">
+                  <div>
+                    <label for="slideshow-interval" class="block text-sm font-medium mb-1">轮播间隔时间</label>
+                    <select id="slideshow-interval" class="w-full bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                      <option value="10">10秒</option>
+                      <option value="30">30秒</option>
+                      <option value="60" selected>1分钟</option>
+                      <option value="180">3分钟</option>
+                      <option value="300">5分钟</option>
+                      <option value="600">10分钟</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="transition-effect" class="block text-sm font-medium mb-1">过渡效果</label>
+                    <select id="transition-effect" class="w-full bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                      <option value="fade" selected>淡入淡出</option>
+                      <option value="slide">滑动</option>
+                      <option value="none">无</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lg font-medium mb-3">显示设置</h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="wallpaper-brightness" class="block text-sm font-medium mb-1">亮度</label>
+                  <input type="range" id="wallpaper-brightness" min="0.1" max="1.0" step="0.1" value="0.7" 
+                         class="w-full accent-primary">
+                </div>
+                
+                <div>
+                  <label for="wallpaper-opacity" class="block text-sm font-medium mb-1">透明度</label>
+                  <input type="range" id="wallpaper-opacity" min="0.3" max="1.0" step="0.1" value="0.9" 
+                         class="w-full accent-primary">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 图标设置 -->
+        <div class="settings-content hidden" id="icons-settings">
+          <div class="space-y-6">
+            <div>
+              <h4 class="text-lg font-medium mb-3">图标容器设置</h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="icon-frame-width" class="block text-sm font-medium mb-1">图标框架宽度 (像素)</label>
+                  <input type="number" id="icon-frame-width" value="80" min="60" max="200" step="10"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+                
+                <div>
+                  <label for="icon-frame-height" class="block text-sm font-medium mb-1">图标框架高度 (像素)</label>
+                  <input type="number" id="icon-frame-height" value="96" min="80" max="240" step="10"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lg font-medium mb-3">图标显示设置</h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label for="default-icon-size" class="block text-sm font-medium mb-1">默认图标大小 (像素)</label>
+                  <input type="number" id="default-icon-size" value="64" min="32" max="128" step="4"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+                
+                <div>
+                  <label for="icon-grid-gap" class="block text-sm font-medium mb-1">图标间距 (像素)</label>
+                  <input type="number" id="icon-grid-gap" value="32" min="8" max="64" step="4"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+                
+                <div class="flex items-center">
+                  <input type="checkbox" id="show-icon-labels" class="rounded text-primary focus:ring-primary" checked>
+                  <label for="show-icon-labels" class="ml-2 text-sm">显示图标标签</label>
+                </div>
+                
+                <div class="flex items-center">
+                  <input type="checkbox" id="icon-drop-shadow" class="rounded text-primary focus:ring-primary" checked>
+                  <label for="icon-drop-shadow" class="ml-2 text-sm">图标阴影效果</label>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lg font-medium mb-3">图标位置调整</h4>
+              
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1">水平对齐</label>
+                  <div class="flex gap-2">
+                    <button class="icon-alignment-btn px-3 py-1 bg-white/10 hover:bg-white/20 rounded border border-white/20" data-align="left">左对齐</button>
+                    <button class="icon-alignment-btn px-3 py-1 bg-primary text-white rounded" data-align="center">居中对齐</button>
+                    <button class="icon-alignment-btn px-3 py-1 bg-white/10 hover:bg-white/20 rounded border border-white/20" data-align="right">右对齐</button>
+                  </div>
+                </div>
+                
+                <div>
+                  <label for="icon-margin-top" class="block text-sm font-medium mb-1">顶部边距 (像素)</label>
+                  <input type="number" id="icon-margin-top" value="16" min="0" max="200" step="4"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+                
+                <div>
+                  <label for="icon-margin-bottom" class="block text-sm font-medium mb-1">底部边距 (像素)</label>
+                  <input type="number" id="icon-margin-bottom" value="16" min="0" max="200" step="4"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+                
+                <div>
+                  <label for="icon-margin-left" class="block text-sm font-medium mb-1">左侧边距 (像素)</label>
+                  <input type="number" id="icon-margin-left" value="16" min="0" max="200" step="4"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+                
+                <div>
+                  <label for="icon-margin-right" class="block text-sm font-medium mb-1">右侧边距 (像素)</label>
+                  <input type="number" id="icon-margin-right" value="16" min="0" max="200" step="4"
+                         class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 搜索设置 -->
+        <div class="settings-content hidden" id="search-settings">
+          <div class="space-y-6">
+            <div>
+              <h4 class="text-lg font-medium mb-3">默认搜索引擎</h4>
+              
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <input type="radio" id="search-baidu" name="search-engine" class="text-primary focus:ring-primary" checked>
+                  <label for="search-baidu" class="ml-2 text-sm">百度</label>
+                </div>
+                
+                <div class="flex items-center">
+                  <input type="radio" id="search-google" name="search-engine" class="text-primary focus:ring-primary">
+                  <label for="search-google" class="ml-2 text-sm">谷歌</label>
+                </div>
+                
+                <div class="flex items-center">
+                  <input type="radio" id="search-bing" name="search-engine" class="text-primary focus:ring-primary">
+                  <label for="search-bing" class="ml-2 text-sm">必应</label>
+                </div>
+                
+                <div class="flex items-center">
+                  <input type="radio" id="search-custom" name="search-engine" class="text-primary focus:ring-primary">
+                  <label for="search-custom" class="ml-2 text-sm">自定义</label>
+                </div>
+                
+                <div id="custom-search-url-container" class="pl-6 mt-2 hidden">
+                  <label for="custom-search-url" class="block text-sm font-medium mb-1">自定义搜索URL</label>
+                  <input type="text" id="custom-search-url" class="w-full bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm" 
+                         placeholder="https://example.com/search?q={query}">
+                  <p class="text-xs text-white/60 mt-1">使用 {query} 作为搜索关键词的占位符</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="p-5 border-t border-white/10 flex justify-end gap-3">
+        <button id="reset-settings" class="px-4 py-2 border border-white/20 hover:bg-white/10 rounded-md transition-colors">
+          恢复默认
+        </button>
+        <button id="save-settings" class="px-4 py-2 bg-primary hover:bg-primary/90 rounded-md transition-colors">
+          保存设置
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加/编辑图标弹窗 -->
+  <div id="app-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center backdrop-blur-sm">
+    <div class="bg-dark text-white rounded-xl w-full max-w-md overflow-hidden flex flex-col">
+      <div class="p-5 border-b border-white/10 flex justify-between items-center">
+        <h3 class="text-xl font-semibold" id="app-modal-title">添加自定义图标</h3>
+        <button id="close-app-modal" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      <div class="p-5">
+        <input type="hidden" id="app-id">
+        
+        <div class="space-y-4">
+          <div>
+            <label for="app-name" class="block text-sm font-medium mb-1">图标名称</label>
+            <input type="text" id="app-name" class="w-full bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm" placeholder="输入名称">
+          </div>
+          
+          <div>
+            <label for="app-url" class="block text-sm font-medium mb-1">链接地址</label>
+            <div class="flex gap-2">
+              <input type="url" id="app-url" class="flex-1 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm" placeholder="https://example.com">
+              <button id="fetch-favicon" class="px-3 py-2 bg-secondary/20 hover:bg-secondary/30 text-secondary rounded-md transition-colors text-sm">
+                <i class="fa fa-download mr-1"></i>获取图标
+              </button>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">图标图片</label>
+            
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div class="flex items-center justify-center p-3 border border-dashed border-white/30 rounded-md cursor-pointer hover:border-primary transition-colors" id="select-local-image">
+                <i class="fa fa-image mr-2"></i>本地图片
+              </div>
+              <div class="flex items-center justify-center p-3 border border-dashed border-white/30 rounded-md cursor-pointer hover:border-primary transition-colors" id="use-image-url">
+                <i class="fa fa-link mr-2"></i>图片直链
+              </div>
+            </div>
+            
+            <input type="file" id="local-image-input" class="hidden" accept="image/*">
+            
+            <div id="image-url-container" class="hidden">
+              <input type="url" id="app-image-url" class="w-full bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm" placeholder="https://example.com/icon.png">
+            </div>
+            
+            <div class="mt-3 flex justify-center">
+              <img id="app-image-preview" src="https://picsum.photos/64/64" alt="预览" class="w-16 h-16 rounded-lg object-cover">
+            </div>
+          </div>
+          
+          <div>
+            <label for="app-icon-size" class="block text-sm font-medium mb-1">图标大小 (像素)</label>
+            <input type="number" id="app-icon-size" value="64" min="32" max="128" step="4"
+                   class="w-24 bg-white/10 border border-white/20 rounded-md px-3 py-2 text-sm">
+          </div>
+        </div>
+      </div>
+      <div class="p-5 border-t border-white/10 flex justify-end gap-3">
+        <button id="cancel-app" class="px-4 py-2 border border-white/20 hover:bg-white/10 rounded-md transition-colors">
+          取消
+        </button>
+        <button id="save-app" class="px-4 py-2 bg-primary hover:bg-primary/90 rounded-md transition-colors">
+          保存
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    let currentAppId = null;
+    let videoFiles = [];
+    let currentVideoIndex = 0;
+    let slideshowIntervalId = null;
+    let isSlideshowRunning = false;
+    let currentAlignment = 'center';
+    
+    // DOM元素
+    const wallpaperVideo = document.getElementById('wallpaper-video');
+    const wallpaperOverlay = document.getElementById('wallpaper-overlay');
+    const appsContainer = document.getElementById('apps-container');
+    const appsGridContainer = document.getElementById('apps-grid-container');
+    const mainContextMenu = document.getElementById('main-context-menu');
+    const appContextMenu = document.getElementById('app-context-menu');
+    const settingsModal = document.getElementById('settings-modal');
+    const appModal = document.getElementById('app-modal');
+    const timeDisplay = document.getElementById('time-display');
+    const dateDisplay = document.getElementById('date-display');
+    const searchInput = document.getElementById('search-input');
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      // 加载保存的应用
+      loadApps();
+      
+      // 加载设置
+      loadSettings();
+      
+      // 启动时间更新
+      updateTime();
+      setInterval(updateTime, 1000);
+      
+      // 初始化事件监听
+      initEventListeners();
+    });
+    
+    // 初始化事件监听
+    function initEventListeners() {
+      // 右键菜单事件
+      document.addEventListener('contextmenu', handleMainContextMenu);
+      document.addEventListener('click', hideAllContextMenus);
+      
+      // 主右键菜单操作
+      document.getElementById('add-custom-app').addEventListener('click', () => {
+        openAppModal();
+        hideAllContextMenus();
+      });
+      
+      document.getElementById('open-settings').addEventListener('click', () => {
+        openSettingsModal();
+        hideAllContextMenus();
+      });
+      
+      // 应用右键菜单操作
+      document.getElementById('delete-app').addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (currentAppId) {
+          deleteApp(currentAppId);
+        }
+        hideAllContextMenus();
+      });
+      
+      document.getElementById('edit-app').addEventListener('click', () => {
+        if (currentAppId) {
+          editApp(currentAppId);
+        }
+        hideAllContextMenus();
+      });
+      
+      // 设置弹窗操作
+      document.getElementById('close-settings').addEventListener('click', closeSettingsModal);
+      document.getElementById('save-settings').addEventListener('click', saveSettings);
+      document.getElementById('reset-settings').addEventListener('click', resetSettings);
+      
+      // 设置标签页切换
+      document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          // 移除所有标签的活跃状态
+          document.querySelectorAll('.settings-tab').forEach(t => {
+            t.classList.remove('active', 'border-b-2', 'border-primary');
+            t.classList.add('text-white/70');
+          });
+          
+          // 添加当前标签的活跃状态
+          tab.classList.add('active', 'border-b-2', 'border-primary');
+          tab.classList.remove('text-white/70');
+          
+          // 隐藏所有内容
+          document.querySelectorAll('.settings-content').forEach(content => {
+            content.classList.add('hidden');
+            content.classList.remove('active');
+          });
+          
+          // 显示当前内容
+          const tabId = tab.getAttribute('data-tab');
+          document.getElementById(`${tabId}-settings`).classList.remove('hidden');
+          document.getElementById(`${tabId}-settings`).classList.add('active');
+        });
+      });
+      
+      // 图标对齐按钮
+      document.querySelectorAll('.icon-alignment-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.icon-alignment-btn').forEach(b => {
+            b.classList.remove('bg-primary', 'text-white');
+            b.classList.add('bg-white/10', 'hover:bg-white/20', 'border', 'border-white/20');
+          });
+          
+          btn.classList.remove('bg-white/10', 'hover:bg-white/20', 'border', 'border-white/20');
+          btn.classList.add('bg-primary', 'text-white');
+          
+          currentAlignment = btn.getAttribute('data-align');
+          updateIconPosition();
+        });
+      });
+      
+      // 边距调整事件
+      document.getElementById('icon-margin-top').addEventListener('input', updateIconPosition);
+      document.getElementById('icon-margin-bottom').addEventListener('input', updateIconPosition);
+      document.getElementById('icon-margin-left').addEventListener('input', updateIconPosition);
+      document.getElementById('icon-margin-right').addEventListener('input', updateIconPosition);
+      
+      // 图标框架大小调整
+      document.getElementById('icon-frame-width').addEventListener('input', updateIconFrames);
+      document.getElementById('icon-frame-height').addEventListener('input', updateIconFrames);
+      
+      // 搜索引擎设置
+      document.querySelectorAll('input[name="search-engine"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          const customContainer = document.getElementById('custom-search-url-container');
+          if (document.getElementById('search-custom').checked) {
+            customContainer.classList.remove('hidden');
+          } else {
+            customContainer.classList.add('hidden');
+          }
+        });
+      });
+      
+      // 壁纸文件夹选择
+      document.getElementById('select-wallpaper-folder').addEventListener('click', () => {
+        const folderInput = document.getElementById('folder-input');
+        folderInput.value = '';
+        folderInput.click();
+      });
+      
+      document.getElementById('folder-input').addEventListener('change', handleFolderSelection);
+      
+      // 轮播设置
+      document.getElementById('enable-slideshow').addEventListener('change', toggleSlideshow);
+      
+      // 壁纸亮度和透明度调整
+      document.getElementById('wallpaper-brightness').addEventListener('input', updateWallpaperSettings);
+      document.getElementById('wallpaper-opacity').addEventListener('input', updateWallpaperSettings);
+      
+      // 应用弹窗操作
+      document.getElementById('close-app-modal').addEventListener('click', closeAppModal);
+      document.getElementById('cancel-app').addEventListener('click', closeAppModal);
+      document.getElementById('save-app').addEventListener('click', saveApp);
+      
+      // 获取网站图标按钮
+      document.getElementById('fetch-favicon').addEventListener('click', fetchWebsiteFavicon);
+      
+      // 图标图片选择
+      document.getElementById('select-local-image').addEventListener('click', () => {
+        document.getElementById('local-image-input').click();
+      });
+      
+      document.getElementById('use-image-url').addEventListener('click', () => {
+        document.getElementById('image-url-container').classList.remove('hidden');
+        document.getElementById('app-image-url').focus();
+      });
+      
+      document.getElementById('local-image-input').addEventListener('change', handleLocalImageSelection);
+      document.getElementById('app-image-url').addEventListener('input', handleImageUrlChange);
+      
+      // 搜索功能
+      searchInput.addEventListener('keypress', handleSearch);
+    }
+    
+    // 处理主页面右键菜单
+    function handleMainContextMenu(e) {
+      e.preventDefault();
+      
+      // 如果点击在应用图标上，显示应用右键菜单
+      if (e.target.closest('.app-icon')) {
+        const appElement = e.target.closest('.app-icon');
+        const appId = appElement.getAttribute('data-id');
+        currentAppId = appId;
+        showAppContextMenu(e, appId);
+        return;
+      }
+      
+      // 否则显示主页面右键菜单
+      const x = e.clientX;
+      const y = e.clientY;
+      
+      mainContextMenu.style.left = `${x}px`;
+      mainContextMenu.style.top = `${y}px`;
+      mainContextMenu.classList.remove('hidden');
+    }
+    
+    // 显示应用图标右键菜单
+    function showAppContextMenu(e, appId) {
+      e.preventDefault();
+      
+      const x = e.clientX;
+      const y = e.clientY;
+      
+      appContextMenu.style.left = `${x}px`;
+      appContextMenu.style.top = `${y}px`;
+      appContextMenu.classList.remove('hidden');
+    }
+    
+    // 隐藏所有右键菜单
+    function hideAllContextMenus() {
+      mainContextMenu.classList.add('hidden');
+      appContextMenu.classList.add('hidden');
+      currentAppId = null;
+    }
+    
+    // 打开设置弹窗
+    function openSettingsModal() {
+      settingsModal.classList.remove('hidden');
+      settingsModal.classList.add('flex');
+    }
+    
+    // 关闭设置弹窗
+    function closeSettingsModal() {
+      settingsModal.classList.add('hidden');
+      settingsModal.classList.remove('flex');
+    }
+    
+    // 打开应用图标弹窗
+    function openAppModal(appId = null) {
+      // 重置表单
+      document.getElementById('app-id').value = '';
+      document.getElementById('app-name').value = '';
+      document.getElementById('app-url').value = '';
+      document.getElementById('app-image-url').value = '';
+      document.getElementById('app-icon-size').value = 64;
+      document.getElementById('app-image-preview').src = 'https://picsum.photos/64/64';
+      document.getElementById('image-url-container').classList.add('hidden');
+      
+      // 如果是编辑模式
+      if (appId) {
+        const app = getAppById(appId);
+        if (app) {
+          document.getElementById('app-id').value = app.id;
+          document.getElementById('app-name').value = app.name;
+          document.getElementById('app-url').value = app.url;
+          document.getElementById('app-icon-size').value = app.size || 64;
+          document.getElementById('app-image-preview').src = app.image;
+          
+          // 如果是URL图片，显示URL输入框
+          if (app.image.startsWith('http')) {
+            document.getElementById('image-url-container').classList.remove('hidden');
+            document.getElementById('app-image-url').value = app.image;
+          }
+          
+          document.getElementById('app-modal-title').textContent = '编辑图标';
+        }
+      } else {
+        document.getElementById('app-modal-title').textContent = '添加自定义图标';
+      }
+      
+      appModal.classList.remove('hidden');
+      appModal.classList.add('flex');
+    }
+    
+    // 关闭应用图标弹窗
+    function closeAppModal() {
+      appModal.classList.add('hidden');
+      appModal.classList.remove('flex');
+    }
+    
+    // 编辑应用图标
+    function editApp(appId) {
+      openAppModal(appId);
+    }
+    
+    // 保存应用图标
+    function saveApp() {
+      const appId = document.getElementById('app-id').value || generateId();
+      const name = document.getElementById('app-name').value.trim();
+      const url = document.getElementById('app-url').value.trim();
+      const size = parseInt(document.getElementById('app-icon-size').value);
+      
+      // 验证输入
+      if (!name || !url) {
+        alert('请填写图标名称和链接地址');
+        return;
+      }
+      
+      // 获取图片地址
+      let image = document.getElementById('app-image-preview').src;
+      
+      // 准备应用数据
+      const appData = {
+        id: appId,
+        name,
+        url,
+        image,
+        size,
+        createdAt: new Date().toISOString()
+      };
+      
+      // 保存应用
+      saveAppData(appData);
+      
+      // 刷新应用列表
+      loadApps();
+      
+      // 关闭弹窗
+      closeAppModal();
+    }
+    
+    // 从网站获取图标
+    function fetchWebsiteFavicon() {
+      const url = document.getElementById('app-url').value.trim();
+      
+      if (!url) {
+        alert('请先输入网站URL');
+        return;
+      }
+      
+      try {
+        // 解析URL获取域名
+        const parsedUrl = new URL(url);
+        const domain = parsedUrl.origin;
+        
+        // 常见的favicon路径
+        const faviconPaths = [
+          '/favicon.ico',
+          '/apple-touch-icon.png',
+          '/apple-touch-icon-precomposed.png',
+          '/favicon.png',
+          '/favicon.svg'
+        ];
+        
+        // 尝试获取favicon
+        const previewImg = document.getElementById('app-image-preview');
+        const originalSrc = previewImg.src;
+        
+        // 显示加载状态
+        previewImg.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMzg0IDM5MmMwIDEwLjYtOC40IDIwLTIwIDIwdjE5LjljMCAxMC42LTguNCAyMC0yMCAyMEg4MGMtMTAuNiAwLTIwLTguNC0yMC0yMFY0MTJjMC0xMC42IDguNC0yMCAyMC0yMGgyOTZjMi41IDAgNC45LjQgNy4xIDEuMWwzMi44LTMyLjhjMi4yLTIuMiAyLjItNS43IDAtNy45bC0zMi44LTMyLjhjLTIuMi0yLjItNS43LTIuMi03LjkgMGgtOTZjLTEwLjYgMC0yMCA4LjQtMjAgMjB2NDhjMCAxMC42IDguNCAyMCAyMCAyMGgyOTZjMTAuNiAwIDIwLTguNCAyMC0yMFY0MTJ6TTI1NiAxOTJjMzYuNCAwIDY0IDI3LjYgNjQgNjRzLTI3LjYgNjQtNjQgNjQtNjQtMjcuNi02NC02NHMyNy42LTY0IDY0LTY0em0wIDEwNGMtMjIuMSAwLTQwLTE3LjktNDAtNDBzMTcuOS00MCA0MC00MCA0MCAxNy45IDQwIDQwLTE3LjkgNDAtNDAgNDB6Ii8+PC9zdmc+';
+        
+        // 尝试各种可能的favicon路径
+        let found = false;
+        
+        const tryFavicon = (index) => {
+          if (index >= faviconPaths.length || found) return;
+          
+          const faviconUrl = domain + faviconPaths[index];
+          const testImg = new Image();
+          
+          testImg.onload = () => {
+            // 找到有效的favicon
+            found = true;
+            previewImg.src = faviconUrl;
+            document.getElementById('image-url-container').classList.remove('hidden');
+            document.getElementById('app-image-url').value = faviconUrl;
+          };
+          
+          testImg.onerror = () => {
+            // 尝试下一个路径
+            tryFavicon(index + 1);
+          };
+          
+          testImg.src = faviconUrl + '?t=' + new Date().getTime(); // 防止缓存
+        };
+        
+        // 开始尝试
+        tryFavicon(0);
+        
+        // 如果全部尝试失败，恢复原始图片
+        setTimeout(() => {
+          if (!found) {
+            previewImg.src = originalSrc;
+            alert('无法获取该网站的图标，请尝试手动设置');
+          }
+        }, 5000);
+        
+      } catch (error) {
+        alert('URL格式不正确，请检查输入');
+        console.error('获取favicon错误:', error);
+      }
+    }
+    
+    // 删除应用图标
+    function deleteApp(appId) {
+      // 确认是否为默认应用
+      const isDefaultApp = appId.startsWith('default-');
+      
+      if (isDefaultApp) {
+        if (confirm('这是默认图标，确定要删除吗？删除后可以通过重置设置恢复。')) {
+          performDelete(appId);
+        }
+      } else {
+        if (confirm('确定要删除这个图标吗？')) {
+          performDelete(appId);
+        }
+      }
+    }
+    
+    // 执行删除操作
+    function performDelete(appId) {
+      // 获取所有应用（包括默认应用）
+      let allApps = JSON.parse(localStorage.getItem('customApps') || '[]');
+      
+      // 过滤掉要删除的应用
+      const updatedApps = allApps.filter(app => app.id !== appId);
+      
+      // 保存更新后的应用列表
+      localStorage.setItem('customApps', JSON.stringify(updatedApps));
+      
+      // 重新加载应用
+      loadApps();
+    }
+    
+    // 加载应用图标
+    function loadApps() {
+      const userApps = JSON.parse(localStorage.getItem('customApps') || '[]');
+      const defaultApps = [
+        {
+          id: 'default-doubao',
+          name: '豆包',
+          url: 'https://www.doubao.com',
+          image: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/nupenuvpxnuov/xhsnapshot/obj/media-fe/pdc_fe_ocean_ugc/80c9318c83c14639b1426964c7d8d00.png',
+          size: 64
+        },
+        {
+          id: 'default-baidu',
+          name: '百度',
+          url: 'https://www.baidu.com',
+          image: 'https://www.baidu.com/img/bd_logo1.png',
+          size: 64
+        },
+        {
+          id: 'default-bilibili',
+          name: '哔哩哔哩',
+          url: 'https://www.bilibili.com',
+          image: 'https://www.bilibili.com/favicon.ico',
+          size: 64
+        },
+        {
+          id: 'default-douyin',
+          name: '抖音',
+          url: 'https://www.douyin.com',
+          image: 'https://lf1-static.bytednsdoc.com/obj/eden-cn/nupenuvpxnuov/xhsnapshot/obj/media-fe/xgplayer-doc/douyin.png',
+          size: 64
+        }
+      ];
+      
+      // 找出用户删除的默认应用ID
+      const deletedDefaultAppIds = defaultApps
+        .map(app => app.id)
+        .filter(id => !userApps.some(userApp => userApp.id === id));
+      
+      // 合并默认应用（排除已删除的）和用户自定义应用
+      const allApps = [
+        ...defaultApps.filter(app => !deletedDefaultAppIds.includes(app.id)),
+        ...userApps.filter(app => !app.id.startsWith('default-'))
+      ];
+      
+      // 清空容器
+      appsContainer.innerHTML = '';
+      
+      // 添加应用图标
+      allApps.forEach(app => {
+        const appElement = createAppElement(app);
+        appsContainer.appendChild(appElement);
+      });
+      
+      // 应用图标框架设置
+      updateIconFrames();
+    }
+    
+    // 创建应用图标元素
+    function createAppElement(app) {
+      const appElement = document.createElement('div');
+      appElement.className = 'app-icon';
+      appElement.setAttribute('data-id', app.id);
+      
+      // 应用图标框架大小
+      const frameWidth = document.getElementById('icon-frame-width').value;
+      const frameHeight = document.getElementById('icon-frame-height').value;
+      appElement.style.width = `${frameWidth}px`;
+      appElement.style.height = `${frameHeight}px`;
+      
+      // 设置点击事件
+      appElement.addEventListener('click', () => {
+        window.open(app.url, '_blank');
+      });
+      
+      // 设置右键事件
+      appElement.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        currentAppId = app.id;
+        showAppContextMenu(e, app.id);
+      });
+      
+      // 图标图片
+      const imgElement = document.createElement('img');
+      imgElement.src = app.image;
+      imgElement.alt = app.name;
+      imgElement.className = 'app-icon-img';
+      imgElement.style.width = `${app.size}px`;
+      imgElement.style.height = `${app.size}px`;
+      
+      // 图标名称
+      const nameElement = document.createElement('span');
+      nameElement.className = 'app-icon-name';
+      nameElement.textContent = app.name;
+      
+      // 应用阴影设置
+      if (document.getElementById('icon-drop-shadow').checked) {
+        imgElement.classList.add('shadow-lg');
+      } else {
+        imgElement.classList.remove('shadow-lg');
+      }
+      
+      // 应用标签显示设置
+      if (!document.getElementById('show-icon-labels').checked) {
+        nameElement.classList.add('hidden');
+      } else {
+        nameElement.classList.remove('hidden');
+      }
+      
+      appElement.appendChild(imgElement);
+      appElement.appendChild(nameElement);
+      
+      return appElement;
+    }
+    
+    // 更新图标框架大小
+    function updateIconFrames() {
+      const frameWidth = document.getElementById('icon-frame-width').value;
+      const frameHeight = document.getElementById('icon-frame-height').value;
+      
+      document.querySelectorAll('.app-icon').forEach(icon => {
+        icon.style.width = `${frameWidth}px`;
+        icon.style.height = `${frameHeight}px`;
+      });
+    }
+    
+    // 更新图标位置
+    function updateIconPosition() {
+      const marginTop = document.getElementById('icon-margin-top').value;
+      const marginBottom = document.getElementById('icon-margin-bottom').value;
+      const marginLeft = document.getElementById('icon-margin-left').value;
+      const marginRight = document.getElementById('icon-margin-right').value;
+      
+      // 应用边距
+      appsContainer.style.marginTop = `${marginTop}px`;
+      appsContainer.style.marginBottom = `${marginBottom}px`;
+      appsContainer.style.marginLeft = `${marginLeft}px`;
+      appsContainer.style.marginRight = `${marginRight}px`;
+      
+      // 应用对齐方式
+      appsGridContainer.style.justifyContent = currentAlignment;
+    }
+    
+    // 保存应用数据
+    function saveAppData(appData) {
+      const apps = JSON.parse(localStorage.getItem('customApps') || '[]');
+      
+      // 检查是否已存在该应用
+      const existingIndex = apps.findIndex(app => app.id === appData.id);
+      
+      if (existingIndex >= 0) {
+        // 更新现有应用
+        apps[existingIndex] = appData;
+      } else {
+        // 添加新应用
+        apps.push(appData);
+      }
+      
+      localStorage.setItem('customApps', JSON.stringify(apps));
+    }
+    
+    // 根据ID获取应用
+    function getAppById(appId) {
+      // 先从用户应用中查找
+      let apps = JSON.parse(localStorage.getItem('customApps') || '[]');
+      let app = apps.find(app => app.id === appId);
+      
+      // 如果是默认应用且未找到，从默认应用中查找
+      if (!app && appId.startsWith('default-')) {
+        const defaultApps = [
+          {
+            id: 'default-doubao',
+            name: '豆包',
+            url: 'https://www.doubao.com',
+            image: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/nupenuvpxnuov/xhsnapshot/obj/media-fe/pdc_fe_ocean_ugc/80c9318c83c14639b1426964c7d8d00.png',
+            size: 64
+          },
+          {
+            id: 'default-baidu',
+            name: '百度',
+            url: 'https://www.baidu.com',
+            image: 'https://www.baidu.com/img/bd_logo1.png',
+            size: 64
+          },
+          {
+            id: 'default-bilibili',
+            name: '哔哩哔哩',
+            url: 'https://www.bilibili.com',
+            image: 'https://www.bilibili.com/favicon.ico',
+            size: 64
+          },
+          {
+            id: 'default-douyin',
+            name: '抖音',
+            url: 'https://www.douyin.com',
+            image: 'https://lf1-static.bytednsdoc.com/obj/eden-cn/nupenuvpxnuov/xhsnapshot/obj/media-fe/xgplayer-doc/douyin.png',
+            size: 64
+          }
+        ];
+        app = defaultApps.find(app => app.id === appId);
+      }
+      
+      return app;
+    }
+    
+    // 处理文件夹选择
+    function handleFolderSelection(e) {
+      const files = Array.from(e.target.files);
+      const videoFiles = files.filter(file => file.type.startsWith('video/'));
+      
+      if (videoFiles.length > 0) {
+        // 显示文件夹路径
+        let folderPath = '';
+        if (videoFiles[0].webkitRelativePath) {
+          folderPath = videoFiles[0].webkitRelativePath.split('/')[0];
+        } else {
+          folderPath = `包含 ${videoFiles.length} 个视频文件的文件夹`;
+        }
+        document.getElementById('wallpaper-folder-path').value = folderPath;
+        
+        // 存储视频文件
+        window.videoFiles = videoFiles.map(file => URL.createObjectURL(file));
+        
+        // 显示视频文件列表
+        displayVideoFiles(videoFiles);
+        
+        // 开始播放第一个视频
+        playVideo(0);
+        
+        // 保存视频文件到设置
+        const settings = JSON.parse(localStorage.getItem('navigationSettings') || '{}');
+        if (!settings.wallpaper) settings.wallpaper = {};
+        settings.wallpaper.folderPath = folderPath;
+        localStorage.setItem('navigationSettings', JSON.stringify(settings));
+      } else {
+        alert('未找到视频文件，请选择包含视频的文件夹');
+      }
+    }
+    
+    // 显示视频文件列表
+    function displayVideoFiles(files) {
+      const listContainer = document.getElementById('video-files-list');
+      listContainer.innerHTML = '';
+      
+      files.forEach((file, index) => {
+        const fileName = file.name;
+        const fileItem = document.createElement('div');
+        fileItem.className = 'py-1 px-2 text-sm hover:bg-white/10 rounded transition-colors';
+        fileItem.textContent = `${index + 1}. ${fileName}`;
+        listContainer.appendChild(fileItem);
+      });
+    }
+    
+    // 播放视频
+    function playVideo(index) {
+      if (!window.videoFiles || window.videoFiles.length === 0) return;
+      
+      index = index % window.videoFiles.length;
+      currentVideoIndex = index;
+      
+      const videoUrl = window.videoFiles[index];
+      wallpaperVideo.src = videoUrl;
+      wallpaperVideo.classList.remove('hidden');
+      
+      // 确保视频正确加载和播放
+      wallpaperVideo.load();
+      wallpaperVideo.play().catch(error => {
+        console.error('视频播放失败:', error);
+        alert('视频播放失败，请尝试其他视频文件');
+      });
+      
+      // 应用当前的壁纸设置
+      updateWallpaperSettings();
+    }
+    
+    // 切换到下一个视频
+    function nextVideo() {
+      currentVideoIndex = (currentVideoIndex + 1) % window.videoFiles.length;
+      playVideo(currentVideoIndex);
+    }
+    
+    // 切换轮播模式
+    function toggleSlideshow() {
+      const enabled = document.getElementById('enable-slideshow').checked;
+      
+      if (enabled && window.videoFiles && window.videoFiles.length > 1) {
+        // 启动轮播
+        const interval = parseInt(document.getElementById('slideshow-interval').value) * 1000;
+        // 清除已有的定时器
+        if (slideshowIntervalId) clearInterval(slideshowIntervalId);
+        slideshowIntervalId = setInterval(nextVideo, interval);
+        isSlideshowRunning = true;
+      } else {
+        // 停止轮播
+        clearInterval(slideshowIntervalId);
+        isSlideshowRunning = false;
+      }
+    }
+    
+    // 更新壁纸设置
+    function updateWallpaperSettings() {
+      const brightness = document.getElementById('wallpaper-brightness').value;
+      const opacity = document.getElementById('wallpaper-opacity').value;
+      
+      wallpaperOverlay.style.backgroundColor = `rgba(0, 0, 0, ${1 - parseFloat(opacity)})`;
+      wallpaperVideo.style.filter = `brightness(${brightness})`;
+    }
+    
+    // 处理本地图片选择
+    function handleLocalImageSelection(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          document.getElementById('app-image-preview').src = event.target.result;
+          document.getElementById('image-url-container').classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    // 处理图片URL变化
+    function handleImageUrlChange() {
+      const url = this.value;
+      if (url) {
+        // 测试图片URL是否有效
+        const testImg = new Image();
+        testImg.onload = () => {
+          document.getElementById('app-image-preview').src = url;
+        };
+        testImg.onerror = () => {
+          alert('图片URL无效，请检查链接');
+        };
+        testImg.src = url;
+      }
+    }
+    
+    // 保存设置
+    function saveSettings() {
+      const settings = {
+        wallpaper: {
+          folderPath: document.getElementById('wallpaper-folder-path').value,
+          videoUrls: document.getElementById('wallpaper-urls').value,
+          brightness: parseFloat(document.getElementById('wallpaper-brightness').value),
+          opacity: parseFloat(document.getElementById('wallpaper-opacity').value),
+          enableSlideshow: document.getElementById('enable-slideshow').checked,
+          slideshowInterval: parseInt(document.getElementById('slideshow-interval').value),
+          transitionEffect: document.getElementById('transition-effect').value
+        },
+        icons: {
+          frameWidth: parseInt(document.getElementById('icon-frame-width').value),
+          frameHeight: parseInt(document.getElementById('icon-frame-height').value),
+          defaultSize: parseInt(document.getElementById('default-icon-size').value),
+          gridGap: parseInt(document.getElementById('icon-grid-gap').value),
+          showLabels: document.getElementById('show-icon-labels').checked,
+          dropShadow: document.getElementById('icon-drop-shadow').checked,
+          alignment: currentAlignment,
+          marginTop: parseInt(document.getElementById('icon-margin-top').value),
+          marginBottom: parseInt(document.getElementById('icon-margin-bottom').value),
+          marginLeft: parseInt(document.getElementById('icon-margin-left').value),
+          marginRight: parseInt(document.getElementById('icon-margin-right').value)
+        },
+        search: {
+          engine: document.querySelector('input[name="search-engine"]:checked').id,
+          customUrl: document.getElementById('custom-search-url').value
+        }
+      };
+      
+      localStorage.setItem('navigationSettings', JSON.stringify(settings));
+      
+      // 应用设置
+      applySettings(settings);
+      
+      // 处理视频URLs
+      if (settings.wallpaper.videoUrls) {
+        const urls = settings.wallpaper.videoUrls.split('\n').filter(url => url.trim());
+        if (urls.length > 0) {
+          window.videoFiles = urls;
+          displayVideoUrls(urls);
+          playVideo(0);
+        }
+      }
+      
+      // 刷新应用图标以应用新设置
+      loadApps();
+      
+      alert('设置已保存');
+      closeSettingsModal();
+    }
+    
+    // 加载设置
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('navigationSettings');
+      
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        applySettings(settings);
+      }
+    }
+    
+    // 应用设置
+    function applySettings(settings) {
+      // 壁纸设置
+      if (settings.wallpaper) {
+        document.getElementById('wallpaper-folder-path').value = settings.wallpaper.folderPath || '';
+        document.getElementById('wallpaper-urls').value = settings.wallpaper.videoUrls || '';
+        document.getElementById('wallpaper-brightness').value = settings.wallpaper.brightness || 0.7;
+        document.getElementById('wallpaper-opacity').value = settings.wallpaper.opacity || 0.9;
+        document.getElementById('enable-slideshow').checked = settings.wallpaper.enableSlideshow || false;
+        document.getElementById('slideshow-interval').value = settings.wallpaper.slideshowInterval || 60;
+        document.getElementById('transition-effect').value = settings.wallpaper.transitionEffect || 'fade';
+        
+        // 应用壁纸效果
+        updateWallpaperSettings();
+        
+        // 处理视频URLs
+        if (settings.wallpaper.videoUrls) {
+          const urls = settings.wallpaper.videoUrls.split('\n').filter(url => url.trim());
+          if (urls.length > 0) {
+            window.videoFiles = urls;
+            displayVideoUrls(urls);
+            playVideo(0);
+          }
+        }
+        
+        // 启动或停止轮播
+        toggleSlideshow();
+      }
+      
+      // 图标设置
+      if (settings.icons) {
+        // 图标框架设置
+        document.getElementById('icon-frame-width').value = settings.icons.frameWidth || 80;
+        document.getElementById('icon-frame-height').value = settings.icons.frameHeight || 96;
+        
+        // 图标显示设置
+        document.getElementById('default-icon-size').value = settings.icons.defaultSize || 64;
+        document.getElementById('icon-grid-gap').value = settings.icons.gridGap || 32;
+        document.getElementById('show-icon-labels').checked = settings.icons.showLabels !== false;
+        document.getElementById('icon-drop-shadow').checked = settings.icons.dropShadow !== false;
+        
+        // 图标位置设置
+        currentAlignment = settings.icons.alignment || 'center';
+        document.getElementById('icon-margin-top').value = settings.icons.marginTop || 16;
+        document.getElementById('icon-margin-bottom').value = settings.icons.marginBottom || 16;
+        document.getElementById('icon-margin-left').value = settings.icons.marginLeft || 16;
+        document.getElementById('icon-margin-right').value = settings.icons.marginRight || 16;
+        
+        // 应用图标对齐
+        document.querySelectorAll('.icon-alignment-btn').forEach(btn => {
+          if (btn.getAttribute('data-align') === currentAlignment) {
+            btn.classList.remove('bg-white/10', 'hover:bg-white/20', 'border', 'border-white/20');
+            btn.classList.add('bg-primary', 'text-white');
+          } else {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-white/10', 'hover:bg-white/20', 'border', 'border-white/20');
+          }
+        });
+        
+        // 应用图标网格间距
+        appsContainer.style.gap = `${settings.icons.gridGap || 32}px`;
+        
+        // 应用图标位置
+        updateIconPosition();
+      }
+      
+      // 搜索设置
+      if (settings.search) {
+        // 选中对应的搜索引擎
+        document.querySelectorAll('input[name="search-engine"]').forEach(radio => {
+          radio.checked = radio.id === settings.search.engine;
+        });
+        
+        // 显示或隐藏自定义搜索URL
+        if (settings.search.engine === 'search-custom') {
+          document.getElementById('custom-search-url-container').classList.remove('hidden');
+        }
+        
+        document.getElementById('custom-search-url').value = settings.search.customUrl || '';
+      }
+    }
+    
+    // 显示视频URL列表
+    function displayVideoUrls(urls) {
+      const listContainer = document.getElementById('video-files-list');
+      listContainer.innerHTML = '';
+      
+      urls.forEach((url, index) => {
+        const fileName = url.split('/').pop().split('?')[0];
+        const fileItem = document.createElement('div');
+        fileItem.className = 'py-1 px-2 text-sm hover:bg-white/10 rounded transition-colors';
+        fileItem.textContent = `${index + 1}. ${fileName}`;
+        listContainer.appendChild(fileItem);
+      });
+    }
+    
+    // 重置设置
+    function resetSettings() {
+      if (confirm('确定要恢复默认设置吗？这将清除您所有的自定义设置。')) {
+        localStorage.removeItem('navigationSettings');
+        // 保留用户添加的图标，但恢复已删除的默认图标
+        const userApps = JSON.parse(localStorage.getItem('customApps') || '[]')
+          .filter(app => !app.id.startsWith('default-'));
+        localStorage.setItem('customApps', JSON.stringify(userApps));
+        
+        loadSettings();
+        loadApps();
+      }
+    }
+    
+    // 处理搜索
+    function handleSearch(e) {
+      if (e.key === 'Enter' && searchInput.value.trim()) {
+        const query = searchInput.value.trim();
+        let searchUrl = '';
+        
+        // 获取默认搜索引擎
+        const searchEngine = document.querySelector('input[name="search-engine"]:checked').id;
+        
+        // 根据搜索引擎构建搜索URL
+        switch (searchEngine) {
+          case 'search-baidu':
+            searchUrl = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`;
+            break;
+          case 'search-google':
+            searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            break;
+          case 'search-bing':
+            searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+            break;
+          case 'search-custom':
+            const customUrl = document.getElementById('custom-search-url').value;
+            searchUrl = customUrl.replace('{query}', encodeURIComponent(query));
+            break;
+        }
+        
+        // 打开搜索结果
+        if (searchUrl) {
+          window.open(searchUrl, '_blank');
+          searchInput.value = '';
+        }
+      }
+    }
+    
+    // 更新时间显示
+    function updateTime() {
+      const now = new Date();
+      
+      // 时间显示
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+      
+      // 日期显示
+      const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+      dateDisplay.textContent = now.toLocaleDateString('zh-CN', options);
+    }
+    
+    // 生成唯一ID
+    function generateId() {
+      return 'app_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    }
+  </script>
+</body>
+</html>
