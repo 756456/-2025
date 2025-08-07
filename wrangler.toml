@@ -1,7 +1,0 @@
-name = "2025"  # 修改为CI预期的名称
-workers_dev = true
-compatibility_date = "2025-08-07"
-main = "worker/index.js"
-
-[assets]
-directory = "./public"
