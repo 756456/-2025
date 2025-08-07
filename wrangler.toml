@@ -1,7 +1,41 @@
 name = "navigation-page"
-type = "javascript"
 workers_dev = true
 compatibility_date = "2025-08-07"
+main = "worker/index.js"
+
+[assets]
+directory = "./public"
+
+### 1. 缓存或DNS问题
+请尝试：
+- 清除浏览器缓存 (Ctrl+Shift+Delete)
+- 使用无痕模式访问
+- 等待2-3分钟后重试（DNS可能需要传播）
+
+### 2. 配置文件优化
+wrangler.toml存在警告，建议修改：
+```toml
+name = "navigation-page"
+workers_dev = true
+compatibility_date = "2025-08-07"
+main = "worker/index.js"
+
+[assets]
+directory = "./public"
+
+### 1. 缓存或DNS问题
+请尝试：
+- 清除浏览器缓存 (Ctrl+Shift+Delete)
+- 使用无痕模式访问
+- 等待2-3分钟后重试（DNS可能需要传播）
+
+### 2. 配置文件优化
+wrangler.toml存在警告，建议修改：
+```toml
+name = "navigation-page"
+workers_dev = true
+compatibility_date = "2025-08-07"
+main = "worker/index.js"
 
 [assets]
 directory = "./public"
